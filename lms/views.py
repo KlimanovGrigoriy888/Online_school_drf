@@ -7,7 +7,8 @@ from lms.serializers import CourseSerializer, LessonSerializer
 class CourseViewSet(viewsets.ModelViewSet):
     """Модель класса ModelViewSet организующая CRUD операции."""
 
-    queryset = Course.objects.all()
+    # Использовали prefetch_related, чтобы уроки для всех курсов подгрузились за 1 дополнительный запрос.
+    queryset = Course.objects.prefetch_related('lesson').all()
     serializer_class = CourseSerializer
 
 
