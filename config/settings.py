@@ -27,7 +27,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Добавление нового пакета rest_framework
     "rest_framework",
+    # Добавление нового пакета django-filters
+    'django_filters',
+    # Добавление новых приложений
     "users",
     "lms",
 ]
