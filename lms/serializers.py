@@ -16,12 +16,12 @@ class CourseSerializer(serializers.ModelSerializer):
 
     # Объявляем метод для подсчета количества уроков
     lesson_count = serializers.SerializerMethodField()
-    # Вывод списка самих уроков, указываем many=True, так как уроков в курсе много
+    # Вывод списка самих уроков через LessonSerializer, указываем many=True, так как уроков в курсе много
     lessons = LessonSerializer(source="lesson", many=True, read_only=True)
 
     class Meta:
         model = Course
-        fields = ("id", "name", "description", "preview", "lesson_count", "lessons")
+        fields = ("id", "name", "description", "preview", "lesson_count", "lessons", "owner")
 
     def get_lesson_count(self, obj):
         """Метод для динамического подсчета уроков курса. obj — это конкретный экземпляр модели Course."""
