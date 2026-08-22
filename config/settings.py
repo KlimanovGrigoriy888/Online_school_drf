@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -31,6 +32,8 @@ INSTALLED_APPS = [
     "rest_framework",
     # Добавление нового пакета django-filters
     'django_filters',
+    # Добавление нового пакета rest_framework_simplejwt
+    'rest_framework_simplejwt',
     # Добавление новых приложений
     "users",
     "lms",
@@ -121,3 +124,23 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.USER"
+
+# Добавление настроек REST_FRAMEWORK для работы приложений с JWT которая позволяет делать авторизацию по токену
+# и установку прав доступа приложений
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    # Здесь указываем уровень доступа для всего проекта. Если после permissions. написанно IsAuthenticated - то данные
+    # защищены для всех эндпойнтов, если AllowAny то нет ограничений к доступу
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
+# Настройки для JWT
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
