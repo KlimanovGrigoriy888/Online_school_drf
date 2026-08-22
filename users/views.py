@@ -1,6 +1,7 @@
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 from users.models import User, Payment
+from .permissions import IsProfileOwner
 from .serializers import UserProfileSerializer, PaymentSerializer, UserSerializer
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, ListAPIView, DestroyAPIView
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,6 +12,8 @@ class UserListAPIView(ListAPIView):
     """Класс представления для просмотра всех пользователей."""
     serializer_class = UserSerializer
     queryset = User.objects.all()
+    # Могут видеть только администраторы
+    permission_classes = [IsAdminUser]
 
 class UserCreateAPIView(CreateAPIView):
     """Класс представления для создания нового пользователя."""
@@ -33,11 +36,16 @@ class UserProfileUpdateAPIView(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
 
+    # permission IsAuthenticated закроет от гостей, а IsProfileOwner запретит чужой PUT/PATCH
+    permission_classes = [IsAuthenticated, IsProfileOwner]
+
 
 # Класс удаления одного объекта класса User, т.к. ничего не отправляем нужен только queryset для отправки id
 # для удаления
 class UserDestroyAPIView(DestroyAPIView):
     queryset = User.objects.all()
+    # Могут удалять только администраторы
+    permission_classes = [IsAdminUser]
 
 
 class PaymentListAPIView(ListAPIView):
