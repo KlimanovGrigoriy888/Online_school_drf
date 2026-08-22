@@ -26,6 +26,28 @@ class PaymentSerializer(serializers.ModelSerializer):
         ]
 
 
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания профиля пользователя и просмотра всех пользователей."""
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "password",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "city",
+            "avatar",
+            "is_staff",
+            "is_superuser",
+            "is_active",
+            "groups"
+        ]
+        # ID и email делаем только для чтения.
+        read_only_fields = ["id", "is_staff", "is_superuser"]
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """Сериализатор для профиля пользователя с историей его платежей."""
 
