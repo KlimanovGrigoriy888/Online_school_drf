@@ -69,8 +69,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # ID и email делаем только для чтения.
         read_only_fields = ["id", "email"]
 
+    # Данный пример показал ИИ
     def to_representation(self, instance):
-        """Динамически скрывает конфиденциальные поля от чужих пользователей."""
+        """Динамически скрывает конфиденциальные поля от чужих пользователей ."""
         # переменной instance данные лежат в виде сложного объекта Python (экземпляра модели),
         # super().to_representation(instance) берет этот сложный объект и «переводит» (преобразует) его в обычный
         # Python-словарь {ключ: значение}
