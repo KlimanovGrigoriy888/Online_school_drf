@@ -64,9 +64,32 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "city",
             "avatar",
             "payments_history",
+            "password"
         ]
         # ID и email делаем только для чтения.
         read_only_fields = ["id", "email"]
+
+    def to_representation(self, instance):
+        """Динамически скрывает конфиденциальные поля от чужих пользователей."""
+        # переменной instance данные лежат в виде сложного объекта Python (экземпляра модели),
+        # super().to_representation(instance) берет этот сложный объект и «переводит» (преобразует) его в обычный
+        # Python-словарь {ключ: значение}
+        data = super().to_representation(instance)
+
+        # Получаем пользователя из контекста и находим там объект текущего HTTP-запроса ['request'], который делает
+        # запрос к API и .user — посмотри на токен и скажи, какой именно пользователь (аккаунт) делает этот запрос
+        # прямо сейчас.
+        request_user = self.context['request'].user
+
+        # Если профиль смотрит НЕ его владелец — стираем фамилию и платежи из JSON
+        if instance != request_user:
+            # .pop() — это стандартный метод для работы со словарями в Python, он находит в словаре ключ
+            # (в данном случае 'last_name') и удаляет (стирает) его вместе со значением, None если ничего нет в словаре
+            data.pop('last_name', None)
+            data.pop('password', None)
+            data.pop('payments_history', None)
+
+        return data
 
     # # Метод получения последнего платежа с использованием метода get_last_payment
     # # last_payment в этом случае необходимо включить в поля сериализатора user
