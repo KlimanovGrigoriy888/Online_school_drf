@@ -1,6 +1,9 @@
+from dataclasses import field
+
 from rest_framework import serializers
 
 from lms.models import Course, Lesson
+from lms.validators import VideoLinkValidator
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -9,6 +12,7 @@ class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = "__all__"
+        validators = [VideoLinkValidator(field='video_link')] # Кастомный валидатор см. # validators.py
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -18,6 +22,7 @@ class CourseSerializer(serializers.ModelSerializer):
     lesson_count = serializers.SerializerMethodField()
     # Вывод списка самих уроков через LessonSerializer, указываем many=True, так как уроков в курсе много
     lessons = LessonSerializer(source="lesson", many=True, read_only=True)
+
 
     class Meta:
         model = Course
