@@ -22,10 +22,10 @@ class Course(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,  # Самый безопасный способ сослаться на кастомного пользователя
         on_delete=models.CASCADE,
-        related_name='courses',
-        verbose_name='Владелец',
+        related_name="courses",
+        verbose_name="Владелец",
         blank=True,
-        null=True
+        null=True,
     )
 
     def __str__(self):
@@ -75,10 +75,10 @@ class Lesson(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='lessons',
-        verbose_name='Владелец',
+        related_name="lessons",
+        verbose_name="Владелец",
         blank=True,
-        null=True
+        null=True,
     )
 
     def __str__(self):
@@ -95,12 +95,13 @@ class Lesson(models.Model):
 class Subscription(models.Model):
     """Модель создания подписки на обновления курса для пользователя."""
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='subscription',
-        verbose_name='Пользователь',
+        related_name="subscription",
+        verbose_name="Пользователь",
         blank=True,
-        null=True
+        null=True,
     )
     course = models.ForeignKey(
         Course,
@@ -111,11 +112,13 @@ class Subscription(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
         # Запрещаем повторную подписку пользователя на тот же самый курс подсказал ИИ
         constraints = [
-            models.UniqueConstraint(fields=['user', 'course'], name='unique_user_course_subscription')
+            models.UniqueConstraint(
+                fields=["user", "course"], name="unique_user_course_subscription"
+            )
         ]
 
     def __str__(self):
