@@ -4,8 +4,11 @@ from rest_framework.serializers import ValidationError
 
 class VideoLinkValidator:
     """Валидатор проверки обязательного наличия ссылки youtube.com"""
+
     # Выносим паттерн на уровень класса, чтобы он компилировался один раз, проверяет наличие названия youtube.com
-    reg = re.compile(r'^(?:https?://)?(?:www\.|m\.)?youtube\.com(?:/.*)?$', re.IGNORECASE)
+    reg = re.compile(
+        r"^(?:https?://)?(?:www\.|m\.)?youtube\.com(?:/.*)?$", re.IGNORECASE
+    )
 
     def __init__(self, field: str):
         self.field = field

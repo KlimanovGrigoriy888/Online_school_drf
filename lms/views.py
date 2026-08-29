@@ -41,7 +41,6 @@ class CourseViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
-
 # Класс создания объекта класса Lesson, т.к. из БД ничего не получаем нужен только сериализатор.
 class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
@@ -90,28 +89,28 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
 class SubscriptionAPIView(APIView):
     """APIView - эндпойнт-переключатель для установки и удаления подписки пользователя на курс, работает только
     на POST запросе."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, *args, **kwargs):
         # Получаем пользователя из request из БД, после проверки его через токен т.е. после авторизации
         user = self.request.user
         # Получаем id курса из request.data, то что отправил пользователь через POST при создании курса {'course': 5}
-        course_id = self.request.data.get('course')
+        course_id = self.request.data.get("course")
         # Получаем объект курса из базы данных с помощью get_object_or_404
         course_item = get_object_or_404(Course, id=course_id)
         # Получаем объекты подписок по текущему пользователю и курсу
         subs_item = Subscription.objects.filter(user=user, course=course_item)
 
-
         # Если подписка у пользователя на этот курс есть - удаляем ее
         if subs_item.exists():
             subs_item.delete()
-            message = 'подписка удалена'
+            message = "подписка удалена"
 
         # Если подписки у пользователя на этот курс нет - создаем ее
         else:
             Subscription.objects.create(user=user, course=course_item)
-            message = 'подписка добавлена'
+            message = "подписка добавлена"
 
         # Возвращаем ответ в API
         return Response({"message": message})
