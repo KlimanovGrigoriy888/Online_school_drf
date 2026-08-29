@@ -1,5 +1,3 @@
-from dataclasses import field
-
 from rest_framework import serializers
 
 from lms.models import Course, Lesson, Subscription
@@ -12,7 +10,9 @@ class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = "__all__"
-        validators = [VideoLinkValidator(field='video_link')] # Кастомный валидатор см. # validators.py
+        validators = [
+            VideoLinkValidator(field="video_link")
+        ]  # Кастомный валидатор см. # validators.py
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -27,7 +27,16 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ("id", "name", "description", "preview", "lesson_count", "lessons", "user_subscribes", "owner")
+        fields = (
+            "id",
+            "name",
+            "description",
+            "preview",
+            "lesson_count",
+            "lessons",
+            "user_subscribes",
+            "owner",
+        )
 
     def get_lesson_count(self, obj):
         """Метод для динамического подсчета уроков курса. obj — это конкретный экземпляр модели Course."""
@@ -36,13 +45,13 @@ class CourseSerializer(serializers.ModelSerializer):
         return obj.lesson.count()
 
     def get_user_subscribes(self, obj):
-        """ Метод для получения данных, подписан ли текущий пользователь на данный курс.
+        """Метод для получения данных, подписан ли текущий пользователь на данный курс.
         obj — это текущий объект курса (Course).
         """
 
         # Достаем объект запроса (request) из контекста сериализатора. self.context — это внутренний мессенджер
         # между View и Serializer,
-        request = self.context.get('request')
+        request = self.context.get("request")
 
         # Если запроса нет (например, сериализатор вызван в тестах без контекста)
         # или пользователь не авторизован (анонимный), возвращаем False
@@ -59,4 +68,4 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ["course"] # Передаем только ID курса
+        fields = ["course"]  # Передаем только ID курса

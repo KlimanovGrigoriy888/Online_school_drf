@@ -13,9 +13,15 @@ class LessonTestCase(APITestCase):
         # Создаем тестового пользователя
         self.user = User.objects.create(email="admin@test.ru", password="password123")
         # Создаем тестовый курс, на который будем подписываться
-        self.course = Course.objects.create(name="Первый курс", description="Начальный курс обучения")
-        self.lesson = Lesson.objects.create(name="Математика", description="Базовая математика",
-                                            course=self.course, owner=self.user)
+        self.course = Course.objects.create(
+            name="Первый курс", description="Начальный курс обучения"
+        )
+        self.lesson = Lesson.objects.create(
+            name="Математика",
+            description="Базовая математика",
+            course=self.course,
+            owner=self.user,
+        )
         # Авторизуем нашего тестового пользователя
         self.client.force_authenticate(user=self.user)
 
@@ -43,12 +49,11 @@ class LessonTestCase(APITestCase):
             "name": "русский язык",
             "course": self.course.id,
             "description": "Базовый русский язык",
-            "video_link": "https://youtube.com"  # Добавляем обязательное поле ссылка, валидную ссылка для валидатора
-
+            "video_link": "https://youtube.com",  # Добавляем обязательное поле ссылка, валидную ссылка для валидатора
         }
         # HTTP клиент для выполнения запроса создания сущности по адресу url
         response = self.client.post(url, data)
-        print(response.json()) # на случай проверки ответа HTTP запроса
+        print(response.json())  # на случай проверки ответа HTTP запроса
         # Проверяем, что объект успешно создался (статус 201)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # Проверяем количество: 1 был в setUp + 1 создали сейчас = должно быть ровно 2
@@ -65,7 +70,7 @@ class LessonTestCase(APITestCase):
         data = {
             "name": "Алгебра",
             "description": "Алгебра для начинающих",
-            "video_link": "https://youtube.com"  # Добавляем обязательное поле ссылка, валидную ссылка для валидатора
+            "video_link": "https://youtube.com",  # Добавляем обязательное поле ссылка, валидную ссылка для валидатора
         }
         # HTTP клиент для выполнения запроса обновления сущности по адресу url
         response = self.client.patch(url, data)
@@ -117,9 +122,9 @@ class LessonTestCase(APITestCase):
                     "preview": None,
                     "video_link": self.lesson.video_link,
                     "course": self.course.pk,
-                    "owner": self.user.pk
+                    "owner": self.user.pk,
                 }
-            ]
+            ],
         }
         # Проверяем, что объект успешно получили (статус 200_OK)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -144,13 +149,16 @@ class SubscriptionTestCase(APITestCase):
     def setUp(self):
         """Подготовка данных перед каждым тестом."""
         # Создаем тестового пользователя
-        self.user = User.objects.create(email="sub_user@test.ru", password="password123")
+        self.user = User.objects.create(
+            email="sub_user@test.ru", password="password123"
+        )
         # Создаем тестовый курс, на который будем подписываться
-        self.course = Course.objects.create(name="Тестовый курс для подписки", description="Описание")
+        self.course = Course.objects.create(
+            name="Тестовый курс для подписки", description="Описание"
+        )
         # Получаем URL подписки из urls.py по его name (укажите ваше имя из urls.py)
         # Если View лежит в приложении lms, имя будет "lms:course_subscribe"
         self.url = reverse("lms:course_subscribe")
-
 
     def test_subscribe_to_course(self):
         """Тест успешного создания подписки авторизованным пользователем."""
@@ -166,7 +174,9 @@ class SubscriptionTestCase(APITestCase):
         # Проверяем текст сообщения с ответом сервера
         self.assertEqual(response.json(), {"message": "подписка добавлена"})
         # Проверяем, что в базе данных действительно появилась запись подписки
-        self.assertTrue(Subscription.objects.filter(user=self.user, course=self.course).exists())
+        self.assertTrue(
+            Subscription.objects.filter(user=self.user, course=self.course).exists()
+        )
 
     def test_unsubscribe_to_course(self):
         """Тест успешного удаления подписки, если она уже существовала."""
@@ -184,7 +194,9 @@ class SubscriptionTestCase(APITestCase):
         # Проверяем текст сообщения с ответом сервера, что подписка удалена
         self.assertEqual(response.json(), {"message": "подписка удалена"})
         # Проверяем, что в базе данных не осталось подписок
-        self.assertFalse(Subscription.objects.filter(user=self.user, course=self.course).exists())
+        self.assertFalse(
+            Subscription.objects.filter(user=self.user, course=self.course).exists()
+        )
 
     def test_subscribe_anonymous_user(self):
         """Тест: на незарегистрированного пользователя получает ошибку 401 при попытке подписаться."""
@@ -201,11 +213,15 @@ class CourseTestCase(APITestCase):
     """Тестирование функционала CRUD для курсов (ViewSet)."""
 
     def setUp(self):
-        self.user = User.objects.create(email="course_admin@test.ru", password="password123")
+        self.user = User.objects.create(
+            email="course_admin@test.ru", password="password123"
+        )
         self.client.force_authenticate(user=self.user)
 
         # Создаем стартовый курс
-        self.course = Course.objects.create(name="Базовый Django", description="Старый курс", owner=self.user)
+        self.course = Course.objects.create(
+            name="Базовый Django", description="Старый курс", owner=self.user
+        )
 
         # Для ViewSet urls обычно формируются как 'lms:course-list' - для create, list(просмотр) и
         # 'lms:course-detail' - для retrieve, update, delete
@@ -214,10 +230,7 @@ class CourseTestCase(APITestCase):
 
     def test_course_create(self):
         """Тест создания курса через ViewSet."""
-        data = {
-            "name": "Новый курс по DRF",
-            "description": "Продвинутый уровень"
-        }
+        data = {"name": "Новый курс по DRF", "description": "Продвинутый уровень"}
         response = self.client.post(self.list_url, data, format="json")
 
         # Проверяем, что объект успешно создался (статус 201)

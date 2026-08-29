@@ -126,7 +126,7 @@ class UserAndPaymentTestCase(APITestCase):
         Payment.objects.create(
             user=self.user,
             payment_amount=1000,
-            payment_method="transfer", # Указываем значение "cash" или "transfer" для способа оплаты т.к. поле choices
+            payment_method="transfer",  # Указываем значение "cash" или "transfer" для способа оплаты т.к. поле choices
             paid_date=timezone.now()
         )
         # Берем name в users/urls.py ('payment_list') используя + можем добавить в запрос например "&paid_course=2",
