@@ -3,20 +3,28 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from users.models import User, Payment
 from .permissions import IsProfileOwner
 from .serializers import UserProfileSerializer, PaymentSerializer, UserSerializer
-from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, ListAPIView, DestroyAPIView
+from rest_framework.generics import (
+    CreateAPIView,
+    RetrieveUpdateAPIView,
+    ListAPIView,
+    DestroyAPIView,
+)
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 
 
 class UserListAPIView(ListAPIView):
     """Класс представления для просмотра всех пользователей."""
+
     serializer_class = UserSerializer
     queryset = User.objects.all()
     # Могут видеть только администраторы
     permission_classes = [IsAdminUser]
 
+
 class UserCreateAPIView(CreateAPIView):
     """Класс представления для создания нового пользователя."""
+
     serializer_class = UserSerializer
     queryset = User.objects.all()
     # Устанавливаем класс доступа AllowAny для всех незарегистрированных пользователй

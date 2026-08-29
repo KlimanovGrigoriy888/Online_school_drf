@@ -1,7 +1,11 @@
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
-from lms.models import Course, Lesson
+from lms.models import Course, Lesson, Subscription
+from lms.paginations import CoursePageNumberPagination, LessonPageNumberPagination
 from lms.permissions import IsModerator, IsOwner
 from lms.serializers import CourseSerializer, LessonSerializer
 
@@ -12,6 +16,8 @@ class CourseViewSet(viewsets.ModelViewSet):
     # Использовали prefetch_related, чтобы уроки для всех курсов подгрузились за 1 дополнительный запрос.
     queryset = Course.objects.prefetch_related("lesson").all()
     serializer_class = CourseSerializer
+    # Подключаем пагинацию для курсов
+    pagination_class = CoursePageNumberPagination
 
     def perform_create(self, serializer):
         """Метод привязки владельца к создателю курса."""
@@ -35,7 +41,6 @@ class CourseViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
-
 # Класс создания объекта класса Lesson, т.к. из БД ничего не получаем нужен только сериализатор.
 class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
@@ -51,6 +56,8 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonListAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
+    # Подключаем пагинацию для уроков
+    pagination_class = LessonPageNumberPagination
     # Могут просматривать только модераторы и владельцы
     permission_classes = [IsAuthenticated, IsModerator | IsOwner]
 
@@ -77,3 +84,33 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
     # Могут удалять объект только зарегистрированные пользователи и не модераторы или владельцы
     permission_classes = [IsAuthenticated, ~IsModerator | IsOwner]
+
+
+class SubscriptionAPIView(APIView):
+    """APIView - эндпойнт-переключатель для установки и удаления подписки пользователя на курс, работает только
+    на POST запросе."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, *args, **kwargs):
+        # Получаем пользователя из request из БД, после проверки его через токен т.е. после авторизации
+        user = self.request.user
+        # Получаем id курса из request.data, то что отправил пользователь через POST при создании курса {'course': 5}
+        course_id = self.request.data.get("course")
+        # Получаем объект курса из базы данных с помощью get_object_or_404
+        course_item = get_object_or_404(Course, id=course_id)
+        # Получаем объекты подписок по текущему пользователю и курсу
+        subs_item = Subscription.objects.filter(user=user, course=course_item)
+
+        # Если подписка у пользователя на этот курс есть - удаляем ее
+        if subs_item.exists():
+            subs_item.delete()
+            message = "подписка удалена"
+
+        # Если подписки у пользователя на этот курс нет - создаем ее
+        else:
+            Subscription.objects.create(user=user, course=course_item)
+            message = "подписка добавлена"
+
+        # Возвращаем ответ в API
+        return Response({"message": message})
