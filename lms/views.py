@@ -1,9 +1,12 @@
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
-from lms.models import Course, Lesson
+from lms.models import Course, Lesson, Subscription
 from lms.permissions import IsModerator, IsOwner
-from lms.serializers import CourseSerializer, LessonSerializer
+from lms.serializers import     CourseSerializer, LessonSerializer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -77,3 +80,33 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     queryset = Lesson.objects.all()
     # Могут удалять объект только зарегистрированные пользователи и не модераторы или владельцы
     permission_classes = [IsAuthenticated, ~IsModerator | IsOwner]
+
+
+class SubscriptionAPIView(APIView):
+    """APIView - эндпойнт-переключатель для установки и удаления подписки пользователя на курс, работает только
+    на POST запросе."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, *args, **kwargs):
+        # Получаем пользователя из request из БД, после проверки его через токен т.е. после авторизации
+        user = self.request.user
+        # Получаем id курса из request.data, то что отправил пользователь через POST при создании курса {'course': 5}
+        course_id = self.request.data.get('course')
+        # Получаем объект курса из базы данных с помощью get_object_or_404
+        course_item = get_object_or_404(Course, id=course_id)
+        # Получаем объекты подписок по текущему пользователю и курсу
+        subs_item = Subscription.objects.filter(user=user, course=course_item)
+
+
+        # Если подписка у пользователя на этот курс есть - удаляем ее
+        if subs_item.exists():
+            subs_item.delete()
+            message = 'подписка удалена'
+
+        # Если подписки у пользователя на этот курс нет - создаем ее
+        else:
+            Subscription.objects.create(user=user, course=course_item)
+            message = 'подписка добавлена'
+
+        # Возвращаем ответ в API
+        return Response({"message": message})
