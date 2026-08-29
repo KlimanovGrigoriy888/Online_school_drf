@@ -5,8 +5,9 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
 from lms.models import Course, Lesson, Subscription
+from lms.paginations import CoursePageNumberPagination, LessonPageNumberPagination
 from lms.permissions import IsModerator, IsOwner
-from lms.serializers import     CourseSerializer, LessonSerializer
+from lms.serializers import CourseSerializer, LessonSerializer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -15,6 +16,8 @@ class CourseViewSet(viewsets.ModelViewSet):
     # Использовали prefetch_related, чтобы уроки для всех курсов подгрузились за 1 дополнительный запрос.
     queryset = Course.objects.prefetch_related("lesson").all()
     serializer_class = CourseSerializer
+    # Подключаем пагинацию для курсов
+    pagination_class = CoursePageNumberPagination
 
     def perform_create(self, serializer):
         """Метод привязки владельца к создателю курса."""
@@ -54,6 +57,8 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonListAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
+    # Подключаем пагинацию для уроков
+    pagination_class = LessonPageNumberPagination
     # Могут просматривать только модераторы и владельцы
     permission_classes = [IsAuthenticated, IsModerator | IsOwner]
 
