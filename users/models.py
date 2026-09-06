@@ -80,7 +80,7 @@ class Payment(models.Model):
         verbose_name="Оплаченный урок",
         help_text="Напишите оплаченный урок, если применим",
     )
-    payment_amount = models.IntegerField(
+    payment_amount = models.PositiveIntegerField(
         default=0,
         verbose_name="Сумма оплаты",
     )
@@ -90,6 +90,20 @@ class Payment(models.Model):
         default=TRANSFER,
         verbose_name="Способ оплаты",
         help_text="Укажите способ оплаты (наличные или перевод)",
+    )
+    payment_link = models.URLField(
+        max_length=1000,
+        blank=True,
+        null=True,
+        verbose_name="Ссылка на оплату",
+        help_text="Ссылка на платежную страницу Stripe"
+    )
+    session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="ID сессии Stripe",
+        help_text="Идентификатор сессии оплаты в Stripe"
     )
 
     def __str__(self):
