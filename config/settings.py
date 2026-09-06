@@ -34,6 +34,8 @@ INSTALLED_APPS = [
     'django_filters',
     # Добавление нового пакета rest_framework_simplejwt
     'rest_framework_simplejwt',
+    # Добавление нового пакета для создания документации
+    'drf_yasg',
     # Добавление новых приложений
     "users",
     "lms",
