@@ -28,6 +28,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для создания профиля пользователя и просмотра всех пользователей."""
+
     class Meta:
         model = User
         fields = [
@@ -42,7 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_staff",
             "is_superuser",
             "is_active",
-            "groups"
+            "groups",
         ]
         # ID и email делаем только для чтения.
         read_only_fields = ["id", "is_staff", "is_superuser"]
@@ -64,7 +65,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "city",
             "avatar",
             "payments_history",
-            "password"
+            "password",
         ]
         # ID и email делаем только для чтения.
         read_only_fields = ["id", "email"]
@@ -80,15 +81,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # Получаем пользователя из контекста и находим там объект текущего HTTP-запроса ['request'], который делает
         # запрос к API и .user — посмотри на токен и скажи, какой именно пользователь (аккаунт) делает этот запрос
         # прямо сейчас.
-        request_user = self.context['request'].user
+        request_user = self.context["request"].user
 
         # Если профиль смотрит НЕ его владелец — стираем фамилию и платежи из JSON
         if instance != request_user:
             # .pop() — это стандартный метод для работы со словарями в Python, он находит в словаре ключ
             # (в данном случае 'last_name') и удаляет (стирает) его вместе со значением, None если ничего нет в словаре
-            data.pop('last_name', None)
-            data.pop('password', None)
-            data.pop('payments_history', None)
+            data.pop("last_name", None)
+            data.pop("password", None)
+            data.pop("payments_history", None)
 
         return data
 

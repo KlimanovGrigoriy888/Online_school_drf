@@ -1,7 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-
 class IsProfileOwner(BasePermission):
     """Разрешает просмотр всем, но редактирование — только владельцу профиля."""
 

@@ -2,8 +2,13 @@ from django.urls import path
 from rest_framework.permissions import AllowAny
 
 from users.apps import UsersConfig
-from users.views import UserProfileUpdateAPIView, PaymentListAPIView, UserCreateAPIView, UserDestroyAPIView, \
-    UserListAPIView
+from users.views import (
+    UserProfileUpdateAPIView,
+    PaymentListAPIView,
+    UserCreateAPIView,
+    UserDestroyAPIView,
+    UserListAPIView,
+)
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -23,8 +28,16 @@ urlpatterns = [
     # путь для просмотра пользователя
     path("payments/", PaymentListAPIView.as_view(), name="payment_list"),
     # пути для получения токенов авторизации, получаем путем ввода email и пароля в запросе по этому пути для не
-    # авторизованных пользователей, далее токен используем в запросах путей требующих авторизации в теле запроса Headers
-    # выбираем Authorization и пишем Bearer и добавляем токен
-    path('login/', TokenObtainPairView.as_view(permission_classes=(AllowAny,)), name='login'),
-    path('token/refresh/', TokenRefreshView.as_view(permission_classes=(AllowAny,)), name='token_refresh'),
+    # авторизованных пользователей, далее токен используем в запросах путей требующих авторизации в теле запроса
+    # Headers выбираем Authorization и пишем Bearer и добавляем токен
+    path(
+        "login/",
+        TokenObtainPairView.as_view(permission_classes=(AllowAny,)),
+        name="login",
+    ),
+    path(
+        "token/refresh/",
+        TokenRefreshView.as_view(permission_classes=(AllowAny,)),
+        name="token_refresh",
+    ),
 ]
