@@ -1,3 +1,6 @@
+from itertools import product
+
+from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 from users.models import User, Payment
@@ -11,6 +14,8 @@ from rest_framework.generics import (
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
+
+from users.services import create_stripe_product, create_stripe_price, create_stripe_session
 
 
 class UserListAPIView(ListAPIView):
@@ -69,3 +74,48 @@ class PaymentListAPIView(ListAPIView):
     filterset_fields = ("paid_course", "paid_lesson", "payment_method")
     #  Настраиваем сортировку по дате оплаты
     ordering_fields = ("paid_date",)
+
+
+class PaymentCreateAPIView(CreateAPIView):
+    """Класс создания оплаты за курс через ресурс stripe.com."""
+
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated] # Ссылка доступна только для авторизованных пользователей
+
+    def perform_create(self, serializer):
+        """Переопределяем логику сохранения платежа, добавляя интеграцию со Stripe."""
+        # Подставляем текущего пользователя и текущее время оплаты
+        # (Пользователю не нужно передавать эти поля в POST-запросе)
+        payment = serializer.save(user=self.request.user, paid_date=timezone.now())
+
+        # Определяем, за что именно платит пользователь (курс или урок)
+        # Извлекаем объект курса или урока из только что созданной записи платежа
+        purchased_item = payment.paid_course if payment.paid_course else payment.paid_lesson
+
+        if purchased_item:
+            # Запускаем последовательную цепочку сервисных функций Stripe если платеж существует:
+
+            # Создаем продукт в Stripe (передаем id, имя и описание), получаем id продукта Stripe
+            stripe_product_id = create_stripe_product(
+                id_product=purchased_item.id,
+                name=purchased_item.name,
+                description=getattr(purchased_item, 'description', 'Оплата обучения')
+            )
+
+            # Создаем цену в Stripe для этого продукта (передаем id созданного продукта Stripe, сумму и имя), получаем
+            # id созданного платежа
+            stripe_price_id = create_stripe_price(
+                product_id=stripe_product_id,
+                amount=payment.payment_amount,
+                product_name=purchased_item.name
+            )
+
+            # Создаем сессию оплаты в Stripe, передавая объект цены (или словарь с id)
+            # Так как ваша функция ожидает price.get("id"), мы можем упаковать строку в словарь
+            stripe_session_id, stripe_payment_url = create_stripe_session(price_id=stripe_price_id)
+
+            # Сохраняем полученные от Stripe данные обратно в нашу модель платежа Django
+            payment.session_id = stripe_session_id
+            payment.payment_link = stripe_payment_url
+            payment.save()
