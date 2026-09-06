@@ -7,7 +7,7 @@ from users.views import (
     PaymentListAPIView,
     UserCreateAPIView,
     UserDestroyAPIView,
-    UserListAPIView,
+    UserListAPIView, PaymentCreateAPIView,
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -25,7 +25,7 @@ urlpatterns = [
     path("users/<int:pk>/", UserProfileUpdateAPIView.as_view(), name="user-profile"),
     # путь для удаления пользователя по его id
     path("users/delete/<int:pk>/", UserDestroyAPIView.as_view(), name="user-delete"),
-    # путь для просмотра пользователя
+    # путь для просмотра платежей
     path("payments/", PaymentListAPIView.as_view(), name="payment_list"),
     # пути для получения токенов авторизации, получаем путем ввода email и пароля в запросе по этому пути для не
     # авторизованных пользователей, далее токен используем в запросах путей требующих авторизации в теле запроса
@@ -40,4 +40,5 @@ urlpatterns = [
         TokenRefreshView.as_view(permission_classes=(AllowAny,)),
         name="token_refresh",
     ),
+    path("payment/create/", PaymentCreateAPIView.as_view(), name="payment_create" ),
 ]
