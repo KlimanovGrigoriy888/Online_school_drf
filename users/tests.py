@@ -1,8 +1,12 @@
+from unittest.mock import patch
+
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
+
+from lms.models import Course
 from .models import Payment
 
 User = get_user_model()
@@ -130,7 +134,7 @@ class UserAndPaymentTestCase(APITestCase):
             paid_date=timezone.now()
         )
         # Берем name в users/urls.py ('payment_list') используя + можем добавить в запрос например "&paid_course=2",
-        # "&payment_method=transfer" или "?ordering=paid_date"
+        # "&payment_method=transfer" или "?ordering=paid_date" для теста фильтрации
         url = reverse("users:payment_list") + "?ordering=paid_date"
         # Делаем запрос получение payments для аутентифицированного пользователя
         response = self.client.get(url)
@@ -141,3 +145,50 @@ class UserAndPaymentTestCase(APITestCase):
         print(data)
         # Проверяем, что это действительно список и в нём есть как минимум один элемент
         self.assertTrue(len(data) >= 1)
+
+
+class PaymentStripeTestCase(APITestCase):
+    """Тестирование создания платежа и интеграции со Stripe."""
+
+    def setUp(self):
+        """Подготовка данных: пользователь и курс."""
+        self.user = User.objects.create(email="test@test.ru", password="password123")
+        self.course = Course.objects.create(name="Курс по Stripe", description="Изучаем API через Stripe")
+        self.client.force_authenticate(user=self.user)
+        self.url = reverse("users:payment_create")  # Указываем имя урла для создания платежа
+
+    # Подменяем наши сервисные функции из файла services.py, чтобы они не запрашивали API запрос
+    @patch("users.views.create_stripe_session")
+    @patch("users.views.create_stripe_price")
+    @patch("users.views.create_stripe_product")
+    def test_payment_create_success(self, mock_product, mock_price, mock_session):
+        """Тест успешного создания платежа с фейковыми ответами от Stripe."""
+
+        # Задаем фейковые возвращаемые значения id для наших функций:
+        mock_product.return_value = "product_fake123"
+        mock_price.return_value = "price_fake123"
+        # Функция сессии возвращает кортеж: (session_id, session_url)
+        mock_session.return_value = ("cs_test_fake_id", "https://stripe.com")
+
+        # Данные, которые мы отправляем в POST-запрос
+        data = {
+            "paid_course": self.course.id,
+            "payment_amount": 5000,
+            "payment_method": "transfer"
+        }
+
+        response = self.client.post(self.url, data, format="json")
+
+        # Проверяем, что сервер вернул статус 201 Created
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # 2. Проверяем, что в базе данных создался ровно 1 платеж
+        self.assertEqual(Payment.objects.all().count(), 1)
+
+        # 3. Проверяем, что фейковые данные от Stripe успешно записались в поля нашей модели
+        created_payment = Payment.objects.first()
+        self.assertEqual(created_payment.session_id, "cs_test_fake_id")
+        self.assertEqual(created_payment.payment_link, "https://stripe.com")
+
+        # 4. Проверяем, что в JSON-ответе пользователю вернулась наша ссылка на оплату
+        self.assertEqual(response.json().get("payment_link"), "https://stripe.com")
