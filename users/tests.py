@@ -182,11 +182,11 @@ class PaymentStripeTestCase(APITestCase):
         # Проверяем, что сервер вернул статус 201 Created
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # 2. Проверяем, что в базе данных создался ровно 1 платеж
+        # Проверяем, что в базе данных создался ровно 1 платеж
         self.assertEqual(Payment.objects.all().count(), 1)
 
-        # 3. Проверяем, что фейковые данные от Stripe успешно записались в поля нашей модели
-        created_payment = Payment.objects.first()
+        # Проверяем, что фейковые данные от Stripe успешно записались в поля модели
+        created_payment = Payment.objects.first() # берем первый созданный объект
         self.assertEqual(created_payment.session_id, "cs_test_fake_id")
         self.assertEqual(created_payment.payment_link, "https://stripe.com")
 
