@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     # Добавление нового пакета для создания документации
     'drf_yasg',
+    # Добавляем планировщик Celery Beat
+    'django_celery_beat',
     # Добавление новых приложений
     "users",
     "lms",
@@ -149,3 +151,15 @@ SIMPLE_JWT = {
 
 # Тестовый токен для подключения к stripe сервису
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+
+## Настройки для Celery
+# URL брокера результатов сообщений, выбран Redis
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = TIME_ZONE
+# Флаг для отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+# Максимальное время на выполнение задачи
+CELERY_TASK_TIME_LIMIT = 30 * 60
