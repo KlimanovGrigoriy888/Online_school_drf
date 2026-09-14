@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,13 +9,14 @@ from lms.models import Course, Lesson, Subscription
 from lms.paginations import CoursePageNumberPagination, LessonPageNumberPagination
 from lms.permissions import IsModerator, IsOwner
 from lms.serializers import CourseSerializer, LessonSerializer
+from lms.tasks import send_email_about_subscription
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     """Модель класса ModelViewSet организующая CRUD операции с курсами."""
 
     # Использовали prefetch_related, чтобы уроки для всех курсов подгрузились за 1 дополнительный запрос.
-    queryset = Course.objects.prefetch_related("lesson").all()
+    queryset = Course.objects.prefetch_related("lessons").all()
     serializer_class = CourseSerializer
     # Подключаем пагинацию для курсов
     pagination_class = CoursePageNumberPagination
@@ -39,6 +41,28 @@ class CourseViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAuthenticated, ~IsModerator & IsOwner]
 
         return super().get_permissions()
+
+    def perform_update(self, serializer):
+        """Метод автоматически срабатывает при обновлении курса (PUT/PATCH запросы)."""
+        # Сохраняем обновленные материалы курса в базу данных т.е. именно в это мгновение новые данные из Postman
+        # перезаписывают старые данные курса в базе данных и мы это видим.
+        course = serializer.save()
+
+        # Находим в базе данных все подписки, оформленные именно на этот курс
+        course_subscriptions = Subscription.objects.filter(course=course)
+
+        # Проходим циклом по всем найденным подпискам
+        for subscription in course_subscriptions:
+            user_email = subscription.user.email
+
+            if user_email:
+                # Профессионально используем transaction.on_commit!
+                # Благодаря этому Celery отправит письмо только после того, как Django
+                # окончательно зафиксирует обновление материалов курса в базе данных подсказал ИИ.
+                # Конструкция user_email=user_email "замораживает" адрес для лямбда-функции.
+                transaction.on_commit(
+                    lambda email_to_send=user_email: send_email_about_subscription.delay(email_to_send)
+                )
 
 
 # Класс создания объекта класса Lesson, т.к. из БД ничего не получаем нужен только сериализатор.
@@ -76,6 +100,27 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     queryset = Lesson.objects.all()
     # Могут обновлять объект только зарегистрированные пользователи и модераторы или владельцы
     permission_classes = [IsAuthenticated, IsModerator | IsOwner]
+
+    def perform_update(self, serializer):
+        """Метод автоматически срабатывает при обновлении УРОКА, отправляет рассылку подписанному пользователю."""
+        # Сохраняем обновленный урок
+        lesson = serializer.save()
+
+        # Достаем курс, к которому привязан этот урок
+        course = lesson.course  # поле связи в модели урока называется course
+
+        # Если урок привязан к какому-то курсу, ищем подписчиков этого курса
+        if course:
+            # Находим все подписки в БД на этот курс
+            course_subscriptions = Subscription.objects.filter(course=course)
+
+            # Запускаем рассылку Celery через transaction.on_commit
+            for subscription in course_subscriptions:
+                user_email = subscription.user.email
+                if user_email:
+                    transaction.on_commit(
+                        lambda email_to_send=user_email: send_email_about_subscription.delay(email_to_send)
+                    )
 
 
 # Класс удаления одного объекта класса Lesson, т.к. ничего не отправляем нужен только queryset для отправки id
