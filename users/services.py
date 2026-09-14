@@ -62,3 +62,12 @@ def create_stripe_session(price_id):
     # session.url — это ссылка для реализации платежа на странице Stripe
 
     return session.id, session.url
+
+
+def retrieve_stripe_session(session_id):
+    """ Получает данные о сессии из Stripe по её ID и возвращает статус оплаты (payment_status)."""
+    # Обращаемся в Stripe через checkout.sessions
+    session = client.v1.checkout.sessions.retrieve(session_id)
+
+    # Возвращаем статус ('paid' или 'unpaid') с помощью метода .get()
+    return session.get("payment_status")

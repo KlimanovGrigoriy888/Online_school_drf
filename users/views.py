@@ -1,7 +1,7 @@
-from itertools import product
-
 from django.utils import timezone
+from requests import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+
 
 from users.models import User, Payment
 from .permissions import IsProfileOwner
@@ -10,12 +10,12 @@ from rest_framework.generics import (
     CreateAPIView,
     RetrieveUpdateAPIView,
     ListAPIView,
-    DestroyAPIView,
+    DestroyAPIView, RetrieveAPIView,
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 
-from users.services import create_stripe_product, create_stripe_price, create_stripe_session
+from users.services import (create_stripe_product, create_stripe_price, create_stripe_session, retrieve_stripe_session)
 
 
 class UserListAPIView(ListAPIView):
@@ -111,11 +111,47 @@ class PaymentCreateAPIView(CreateAPIView):
                 product_name=purchased_item.name
             )
 
-            # Создаем сессию оплаты в Stripe, передавая объект цены (или словарь с id)
-            # Так как ваша функция ожидает price.get("id"), мы можем упаковать строку в словарь
+            # Создаем сессию оплаты в Stripe, передавая объект цены
             stripe_session_id, stripe_payment_url = create_stripe_session(price_id=stripe_price_id)
 
-            # Сохраняем полученные от Stripe данные обратно в нашу модель платежа Django
+            # Сохраняем полученные от Stripe данные обратно в модель платежа Django
             payment.session_id = stripe_session_id
             payment.payment_link = stripe_payment_url
             payment.save()
+
+
+class PaymentStatusAPIView(RetrieveAPIView):
+    """Generic-представление для получения информации о платеже и его статусе из Stripe."""
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def retrieve(self, request, *args, **kwargs):
+        # Это обращение к БД, Django сам находит объект платежа Payment в БД по ID из URL
+        # (например, через путь /payment/status/5/)
+        instance = self.get_object()
+
+        # Достаем из нашей модели (см. атрибуты Модели) сохраненный session_id Stripe
+        session_id = instance.session_id
+
+        if session_id:
+            try:
+                # Передаем ID сессии в сервисную функцию в services.py получения данных платежа через API Stripe
+                payment_status = retrieve_stripe_session(session_id)
+
+                # Возвращаем пользователю стандартные данные платежа,
+                # дополнив их актуальным статусом из Stripe "stripe_status"
+                serializer = self.get_serializer(instance)
+                data = serializer.data
+                data["stripe_status"] = payment_status
+
+                return Response(data, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                return Response(
+                    {"error": f"Ошибка обращения к Stripe: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Если у платежа почему-то нет session_id (например, платили наличными)
+        return super().retrieve(request, *args, **kwargs)
