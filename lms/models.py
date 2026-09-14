@@ -69,7 +69,7 @@ class Lesson(models.Model):
         Course,
         on_delete=models.CASCADE,
         verbose_name="Курс",
-        related_name="lesson",
+        related_name="lessons",
         help_text="Укажите курс",
     )
     owner = models.ForeignKey(
