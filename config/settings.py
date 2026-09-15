@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+
+from celery.schedules import crontab
 from dotenv import load_dotenv
 from datetime import timedelta
 
@@ -36,6 +38,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     # Добавление нового пакета для создания документации
     'drf_yasg',
+    # Добавляем планировщик Celery Beat
+    'django_celery_beat',
     # Добавление новых приложений
     "users",
     "lms",
@@ -145,7 +149,39 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    # Эта настройка "заставит Simple JWT при каждой выдаче токена обновлять поле last_login в модели User
+    "UPDATE_LAST_LOGIN": True,
 }
 
 # Тестовый токен для подключения к stripe сервису
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+
+## Настройки для Celery
+# URL брокера результатов сообщений, выбран Redis
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = TIME_ZONE
+# Флаг для отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+# Максимальное время на выполнение задачи
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+    "block_inactive_users_monthly": {
+        "task": "users.tasks.blocked_inactive_users",
+        "schedule": crontab(minute='*/1') # для работы согласно задания необходимо поставить day_of_month='1'
+    }
+}
+
+# Настройки отправки почты
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = os.getenv('YOUR_EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('YOUR_EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

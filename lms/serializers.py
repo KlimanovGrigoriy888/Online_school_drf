@@ -23,7 +23,7 @@ class CourseSerializer(serializers.ModelSerializer):
     # Объявляем метод для выборки информации подписании текущего пользователя на курс или нет
     user_subscribes = serializers.SerializerMethodField()
     # Вывод списка самих уроков через LessonSerializer, указываем many=True, так как уроков в курсе много
-    lessons = LessonSerializer(source="lesson", many=True, read_only=True)
+    lessons = LessonSerializer(many=True, read_only=True)
 
     class Meta:
         model = Course
@@ -40,9 +40,9 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_lesson_count(self, obj):
         """Метод для динамического подсчета уроков курса. obj — это конкретный экземпляр модели Course."""
-        # 'lesson' — это related_name из ForeignKey в модели Lesson.
+        # 'lessons' — это related_name из ForeignKey в модели Lesson для .
         # Если related_name не задан, Django по умолчанию использует 'lesson_set'.
-        return obj.lesson.count()
+        return obj.lessons.count()
 
     def get_user_subscribes(self, obj):
         """Метод для получения данных, подписан ли текущий пользователь на данный курс.

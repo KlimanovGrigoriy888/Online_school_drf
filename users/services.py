@@ -1,4 +1,3 @@
-import stripe
 from stripe import StripeClient
 
 from config.settings import STRIPE_API_KEY
@@ -14,22 +13,24 @@ def create_stripe_product(id_product, name, description):
             "name": name,
             "description": description,
             # Передаем внутренний ID продукта из модели в метаданные
-            "metadata": {
-                "course_id": str(id_product)
-            }
+            "metadata": {"course_id": str(id_product)},
         }
     )
 
     # Возвращаем уникальный строковый ID продукта, который сгенерировал Stripe
     return product.id
 
+
 def create_stripe_price(product_id, amount, product_name):
     """Создает цену продукта на API ресурсе stripe"""
     price = client.v1.prices.create(
         params={
             "product": product_id,  # Связываем цену с созданным продуктом в функции create_stripe_product()
-            "currency": "rub",      # Валюта платежа
-            "unit_amount": int(amount * 100),  # Переводим рубли в копейки требует stripe привести к наименьшему платежу
+            "currency": "rub",  # Валюта платежа
+            "unit_amount": int(
+                amount * 100
+            ),  # Переводим рубли в копейки требует stripe привести к наименьшему
+            # платежу
         }
     )
     # Возвращаем ID созданной цены
@@ -43,12 +44,7 @@ def create_stripe_session(price_id):
     session = client.v1.checkout.sessions.create(
         params={
             # Передаем ID цены, которую мы создали функции create_stripe_price()
-            "line_items": [
-                {
-                    "price": price_id,
-                    "quantity": 1
-                }
-            ],
+            "line_items": [{"price": price_id, "quantity": 1}],
             # Режим — одиночный платеж (не подписка)
             "mode": "payment",
             # Страницы, куда Stripe перенаправит пользователя после оплаты или отмены
@@ -62,3 +58,12 @@ def create_stripe_session(price_id):
     # session.url — это ссылка для реализации платежа на странице Stripe
 
     return session.id, session.url
+
+
+def retrieve_stripe_session(session_id):
+    """Получает данные о сессии из Stripe по её ID и возвращает статус оплаты (payment_status)."""
+    # Обращаемся в Stripe через checkout.sessions
+    session = client.v1.checkout.sessions.retrieve(session_id)
+
+    # Возвращаем статус ('paid' или 'unpaid') с помощью метода .get()
+    return session.get("payment_status")

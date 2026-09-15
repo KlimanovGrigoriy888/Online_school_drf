@@ -19,13 +19,11 @@ class PaymentSerializer(serializers.ModelSerializer):
             "paid_lesson",
             "payment_amount",
             "payment_method",
-            'payment_link',
-            'session_id'
+            "payment_link",
+            "session_id",
         ]
         # ID делаем только для чтения.
-        read_only_fields = [
-            "user", "id" ,"paid_date", "payment_link", "session_id"
-        ]
+        read_only_fields = ["user", "id", "paid_date", "payment_link", "session_id"]
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -46,9 +44,10 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "is_active",
             "groups",
+            "last_login",
         ]
         # ID и email делаем только для чтения.
-        read_only_fields = ["id", "is_staff", "is_superuser"]
+        read_only_fields = ["id", "is_staff", "is_superuser", "last_login"]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

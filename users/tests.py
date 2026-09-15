@@ -33,9 +33,7 @@ class UserTestCase(APITestCase):
         """Тест: администратор успешно получает список пользователей."""
         # Создаем пользователя-администратора (is_staff=True)
         admin_user = User.objects.create(
-            email="admin_staff@test.ru",
-            password="password123",
-            is_staff=True
+            email="admin_staff@test.ru", password="password123", is_staff=True
         )
         # Авторизуем админа в клиенте
         self.client.force_authenticate(user=admin_user)
@@ -49,8 +47,7 @@ class UserTestCase(APITestCase):
         """Тест: обычный пользователь получает ошибку 403 при попытке просмотреть список."""
         # Создаем обычного пользователя (не админа, is_staff=False)
         normal_user = User.objects.create(
-            email="student@test.ru",
-            password="password123"
+            email="student@test.ru", password="password123"
         )
         # Авторизуем обычного пользователя
         self.client.force_authenticate(user=normal_user)
@@ -67,10 +64,14 @@ class UserAndPaymentTestCase(APITestCase):
     def setUp(self):
         """Подготовка данных: создаем обычного пользователя и администратора."""
         # Создаем обычного пользователя
-        self.user = User.objects.create(email="student_profile@test.ru", password="password123")
+        self.user = User.objects.create(
+            email="student_profile@test.ru", password="password123"
+        )
 
         # Создаем администратора (is_staff=True)
-        self.admin_user = User.objects.create(email="admin_profile@test.ru", password="password123", is_staff=True)
+        self.admin_user = User.objects.create(
+            email="admin_profile@test.ru", password="password123", is_staff=True
+        )
 
     def test_profile_update_by_owner(self):
         """Тест: пользователь может успешно обновить СВОЙ профиль."""
@@ -93,7 +94,9 @@ class UserAndPaymentTestCase(APITestCase):
     def test_profile_update_by_not_owner(self):
         """Тест: пользователь НЕ может обновить ЧУЖОЙ профиль (IsProfileOwner)."""
         # Создаем чужого пользователя, но без предварительной авторизации
-        stranger_user = User.objects.create(email="stranger@test.ru", password="password123")
+        stranger_user = User.objects.create(
+            email="stranger@test.ru", password="password123"
+        )
 
         # Авторизуем нашего основного пользователя из setUp
         self.client.force_authenticate(user=self.user)
@@ -131,7 +134,7 @@ class UserAndPaymentTestCase(APITestCase):
             user=self.user,
             payment_amount=1000,
             payment_method="transfer",  # Указываем значение "cash" или "transfer" для способа оплаты т.к. поле choices
-            paid_date=timezone.now()
+            paid_date=timezone.now(),
         )
         # Берем name в users/urls.py ('payment_list') используя + можем добавить в запрос например "&paid_course=2",
         # "&payment_method=transfer" или "?ordering=paid_date" для теста фильтрации
@@ -153,9 +156,13 @@ class PaymentStripeTestCase(APITestCase):
     def setUp(self):
         """Подготовка данных: пользователь и курс."""
         self.user = User.objects.create(email="test@test.ru", password="password123")
-        self.course = Course.objects.create(name="Курс по Stripe", description="Изучаем API через Stripe")
+        self.course = Course.objects.create(
+            name="Курс по Stripe", description="Изучаем API через Stripe"
+        )
         self.client.force_authenticate(user=self.user)
-        self.url = reverse("users:payment_create")  # Указываем имя урла для создания платежа
+        self.url = reverse(
+            "users:payment_create"
+        )  # Указываем имя урла для создания платежа
 
     # Подменяем наши сервисные функции из файла services.py, чтобы они не запрашивали API запрос
     @patch("users.views.create_stripe_session")
@@ -174,7 +181,7 @@ class PaymentStripeTestCase(APITestCase):
         data = {
             "paid_course": self.course.id,
             "payment_amount": 5000,
-            "payment_method": "transfer"
+            "payment_method": "transfer",
         }
 
         response = self.client.post(self.url, data, format="json")
@@ -186,9 +193,9 @@ class PaymentStripeTestCase(APITestCase):
         self.assertEqual(Payment.objects.all().count(), 1)
 
         # Проверяем, что фейковые данные от Stripe успешно записались в поля модели
-        created_payment = Payment.objects.first() # берем первый созданный объект
+        created_payment = Payment.objects.first()  # берем первый созданный объект
         self.assertEqual(created_payment.session_id, "cs_test_fake_id")
         self.assertEqual(created_payment.payment_link, "https://stripe.com")
 
-        # 4. Проверяем, что в JSON-ответе пользователю вернулась наша ссылка на оплату
+        # Проверяем, что в JSON-ответе пользователю вернулась наша ссылка на оплату
         self.assertEqual(response.json().get("payment_link"), "https://stripe.com")
