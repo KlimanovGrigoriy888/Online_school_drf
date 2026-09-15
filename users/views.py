@@ -83,8 +83,9 @@ class PaymentCreateAPIView(CreateAPIView):
     queryset = Payment.objects.all()
     permission_classes = [IsAuthenticated] # Ссылка доступна только для авторизованных пользователей
 
+    # perform_create метод срабатывает при создании объекта с помощью представления CreateAPIView
     def perform_create(self, serializer):
-        """Переопределяем логику сохранения платежа, добавляя интеграцию со Stripe."""
+        """Переопределяем логику сохранения платежа, добавляя интеграцию с API запросом со Stripe сервиса платежей."""
         # Подставляем текущего пользователя и текущее время оплаты
         # (Пользователю не нужно передавать эти поля в POST-запросе)
         payment = serializer.save(user=self.request.user, paid_date=timezone.now())
@@ -121,17 +122,19 @@ class PaymentCreateAPIView(CreateAPIView):
 
 
 class PaymentStatusAPIView(RetrieveAPIView):
-    """Generic-представление для получения информации о платеже и его статусе из Stripe."""
+    """Generic-представление для получения информации о платеже и его статусе из системы платежей на API Stripe,
+    для API запроса используем функцию "retrieve_stripe_session(session_id)" написанную в services.py."""
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
 
+    # retrieve метод срабатывает при получении данных объекта с помощью представления RetrieveAPIView
     def retrieve(self, request, *args, **kwargs):
         # Это обращение к БД, Django сам находит объект платежа Payment в БД по ID из URL
         # (например, через путь /payment/status/5/)
         instance = self.get_object()
 
-        # Достаем из нашей модели (см. атрибуты Модели) сохраненный session_id Stripe
+        # Достаем из нашей модели (см. атрибуты Модели) сохраненный session_id для Stripe
         session_id = instance.session_id
 
         if session_id:

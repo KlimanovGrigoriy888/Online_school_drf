@@ -43,18 +43,20 @@ class CourseViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_update(self, serializer):
-        """Метод автоматически срабатывает при обновлении курса (PUT/PATCH запросы)."""
+        """Метод автоматически срабатывает при обновлении курса (PUT/PATCH запросы) и делает отправку email сообщения
+        подписанному пользователю на данный курс."""
         # Сохраняем обновленные материалы курса в базу данных т.е. именно в это мгновение новые данные из Postman
         # перезаписывают старые данные курса в базе данных и мы это видим.
         course = serializer.save()
 
-        # Находим в базе данных все подписки, оформленные именно на этот курс
+        # Находим в базе данных все подписки из модели подписок, оформленные именно на этот курс
         course_subscriptions = Subscription.objects.filter(course=course)
 
         # Проходим циклом по всем найденным подпискам
         for subscription in course_subscriptions:
+            # получаем из этих подписок пользователя
             user_email = subscription.user.email
-
+            # если есть пользователь оправляем ему письмо
             if user_email:
                 # Профессионально используем transaction.on_commit!
                 # Благодаря этому Celery отправит письмо только после того, как Django
@@ -102,7 +104,7 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated, IsModerator | IsOwner]
 
     def perform_update(self, serializer):
-        """Метод автоматически срабатывает при обновлении УРОКА, отправляет рассылку подписанному пользователю."""
+        """Метод автоматически срабатывает при обновлении УРОКА и отправляет рассылку подписанному пользователю."""
         # Сохраняем обновленный урок
         lesson = serializer.save()
 
