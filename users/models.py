@@ -96,14 +96,14 @@ class Payment(models.Model):
         blank=True,
         null=True,
         verbose_name="Ссылка на оплату",
-        help_text="Ссылка на платежную страницу Stripe"
+        help_text="Ссылка на платежную страницу Stripe",
     )
     session_id = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         verbose_name="ID сессии Stripe",
-        help_text="Идентификатор сессии оплаты в Stripe"
+        help_text="Идентификатор сессии оплаты в Stripe",
     )
 
     def __str__(self):
