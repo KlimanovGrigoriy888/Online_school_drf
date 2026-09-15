@@ -46,9 +46,10 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "is_active",
             "groups",
+            "last_login",
         ]
         # ID и email делаем только для чтения.
-        read_only_fields = ["id", "is_staff", "is_superuser"]
+        read_only_fields = ["id", "is_staff", "is_superuser", "last_login"]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
