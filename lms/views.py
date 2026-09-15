@@ -63,7 +63,9 @@ class CourseViewSet(viewsets.ModelViewSet):
                 # окончательно зафиксирует обновление материалов курса в базе данных подсказал ИИ.
                 # Конструкция user_email=user_email "замораживает" адрес для лямбда-функции.
                 transaction.on_commit(
-                    lambda email_to_send=user_email: send_email_about_subscription.delay(email_to_send)
+                    lambda email_to_send=user_email: send_email_about_subscription.delay(
+                        email_to_send
+                    )
                 )
 
 
@@ -121,7 +123,9 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
                 user_email = subscription.user.email
                 if user_email:
                     transaction.on_commit(
-                        lambda email_to_send=user_email: send_email_about_subscription.delay(email_to_send)
+                        lambda email_to_send=user_email: send_email_about_subscription.delay(
+                            email_to_send
+                        )
                     )
 
 

@@ -7,7 +7,9 @@ from users.views import (
     PaymentListAPIView,
     UserCreateAPIView,
     UserDestroyAPIView,
-    UserListAPIView, PaymentCreateAPIView, PaymentStatusAPIView,
+    UserListAPIView,
+    PaymentCreateAPIView,
+    PaymentStatusAPIView,
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -41,5 +43,9 @@ urlpatterns = [
         name="token_refresh",
     ),
     path("payment/create/", PaymentCreateAPIView.as_view(), name="payment_create"),
-    path('payment/status/<int:pk>/', PaymentStatusAPIView.as_view(), name='payment_status'),
+    path(
+        "payment/status/<int:pk>/",
+        PaymentStatusAPIView.as_view(),
+        name="payment_status",
+    ),
 ]

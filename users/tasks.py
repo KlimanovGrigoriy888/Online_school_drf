@@ -14,13 +14,13 @@ def blocked_inactive_users():
     вторая команда - celery -A config beat --scheduler django -l INFO."""
 
     # Получаем дату 30 дней назад, как точку отсчета от текущей даты
-    data_one_month_ago= timezone.now() - timedelta(days=30)
+    data_one_month_ago = timezone.now() - timedelta(days=30)
 
     # Находим активных пользователей которые не логинились более 30 дней назад
     inactive_users = User.objects.filter(
         is_active=True,
         # Получаем время последнего логирования пользователя при условии если логирование было месяц назад
-        last_login__lt=data_one_month_ago
+        last_login__lt=data_one_month_ago,
     )
     # Считаем неактивных пользователей
     count = inactive_users.count()
@@ -33,8 +33,3 @@ def blocked_inactive_users():
         print("Celery Beat: Неактивных пользователей для блокировки не найдено.")
 
     return f"Проверка завершена. Заблокировано: {count}"
-
-
-
-
-

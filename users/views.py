@@ -10,12 +10,18 @@ from rest_framework.generics import (
     CreateAPIView,
     RetrieveUpdateAPIView,
     ListAPIView,
-    DestroyAPIView, RetrieveAPIView,
+    DestroyAPIView,
+    RetrieveAPIView,
 )
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 
-from users.services import (create_stripe_product, create_stripe_price, create_stripe_session, retrieve_stripe_session)
+from users.services import (
+    create_stripe_product,
+    create_stripe_price,
+    create_stripe_session,
+    retrieve_stripe_session,
+)
 
 
 class UserListAPIView(ListAPIView):
@@ -81,7 +87,9 @@ class PaymentCreateAPIView(CreateAPIView):
 
     serializer_class = PaymentSerializer
     queryset = Payment.objects.all()
-    permission_classes = [IsAuthenticated] # Ссылка доступна только для авторизованных пользователей
+    permission_classes = [
+        IsAuthenticated
+    ]  # Ссылка доступна только для авторизованных пользователей
 
     # perform_create метод срабатывает при создании объекта с помощью представления CreateAPIView
     def perform_create(self, serializer):
@@ -92,7 +100,9 @@ class PaymentCreateAPIView(CreateAPIView):
 
         # Определяем, за что именно платит пользователь (курс или урок)
         # Извлекаем объект курса или урока из только что созданной записи платежа
-        purchased_item = payment.paid_course if payment.paid_course else payment.paid_lesson
+        purchased_item = (
+            payment.paid_course if payment.paid_course else payment.paid_lesson
+        )
 
         if purchased_item:
             # Запускаем последовательную цепочку сервисных функций Stripe если платеж существует:
@@ -101,7 +111,7 @@ class PaymentCreateAPIView(CreateAPIView):
             stripe_product_id = create_stripe_product(
                 id_product=purchased_item.id,
                 name=purchased_item.name,
-                description=getattr(purchased_item, 'description', 'Оплата обучения')
+                description=getattr(purchased_item, "description", "Оплата обучения"),
             )
 
             # Создаем цену в Stripe для этого продукта (передаем id созданного продукта Stripe, сумму и имя), получаем
@@ -109,11 +119,13 @@ class PaymentCreateAPIView(CreateAPIView):
             stripe_price_id = create_stripe_price(
                 product_id=stripe_product_id,
                 amount=payment.payment_amount,
-                product_name=purchased_item.name
+                product_name=purchased_item.name,
             )
 
             # Создаем сессию оплаты в Stripe, передавая объект цены
-            stripe_session_id, stripe_payment_url = create_stripe_session(price_id=stripe_price_id)
+            stripe_session_id, stripe_payment_url = create_stripe_session(
+                price_id=stripe_price_id
+            )
 
             # Сохраняем полученные от Stripe данные обратно в модель платежа Django
             payment.session_id = stripe_session_id
@@ -122,8 +134,11 @@ class PaymentCreateAPIView(CreateAPIView):
 
 
 class PaymentStatusAPIView(RetrieveAPIView):
-    """Generic-представление для получения информации о платеже и его статусе из системы платежей на API Stripe,
-    для API запроса используем функцию "retrieve_stripe_session(session_id)" написанную в services.py."""
+    """Generic-представление для получения информации о платеже по его ID при создании через CreateAPIView
+     и получении его статуса из системы платежей на API Stripe,
+    для API запроса используем функцию "retrieve_stripe_session(session_id)" написанную в services.py.
+    """
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
@@ -153,7 +168,7 @@ class PaymentStatusAPIView(RetrieveAPIView):
             except Exception as e:
                 return Response(
                     {"error": f"Ошибка обращения к Stripe: {str(e)}"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
         # Если у платежа почему-то нет session_id (например, платили наличными)
